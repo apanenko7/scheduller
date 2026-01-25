@@ -57,6 +57,6 @@ export const scheduleData = [
       { subject: "Фізкультура", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
     ],
   },
-  { day: "Неділя", lessons: [{ subject: "Читання", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },], times: TIME_WEEKDAY, },
+  { day: "Неділя", lessons: [], times: [] },
   { day: "Понеділок", lessons: [], times: [] },
 ];
