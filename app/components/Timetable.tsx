@@ -2,79 +2,33 @@
 
 import Link from "next/link";
 import React, { useEffect, useState, useRef } from "react";
+import { useHideWeekends } from "../context/HideWeekendsContext";
 
-const TIME_WEEKDAY = ["08:00 - 08:40", "08:55 - 09:35", "10:00 - 10:40", "11:05 - 11:45", "12:00 - 12:40", "12:55 - 13:35"];
-const TIME_SATURDAY = ["08:30 - 09:10", "09:20 - 10:00", "10:10 - 10:50", "11:00 - 11:40", "11:55 - 12:35"];
+interface Lesson {
+  subject: string;
+  link: string;
+}
 
-// Дані розкладу (скорочено для прикладу, залиш свій повний список)
-const scheduleData = [
-  {
-    day: "Вівторок",
-    times: TIME_WEEKDAY,
-    lessons: [
-      { subject: "ЯДС", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Математика", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Укр. Мова", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Читання", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Фізкультура", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-    ],
-  },
-  {
-    day: "Середа",
-    times: TIME_WEEKDAY,
-    lessons: [
-      { subject: "Англ. Мова", link: "https://us02web.zoom.us/j/82089068912?pwd=azNVQ04xMnZueWxsbkR4cGhReEtEdz09&authuser=0" },
-      { subject: "ЯДС", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Математика", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Укр. Мова", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Образотворче Мистецтво", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Інформатика", link: "https://us04web.zoom.us/j/7815597413?pwd=VE5vMVRUc0gwL25ocGU5L2dkR3FVZz09" },
-    ],
-  },
-  {
-    day: "Четвер",
-    times: TIME_WEEKDAY,
-    lessons: [
-      { subject: "Читання", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Математика", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Укр. Мова", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Дизайн та Технології", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Фізкультура", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-    ],
-  },
-  {
-    day: "П'ятниця",
-    times: TIME_WEEKDAY,
-    lessons: [
-      { subject: "ЯДС", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Математика", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Англ. Мова", link: "https://us02web.zoom.us/j/82089068912?pwd=azNVQ04xMnZueWxsbkR4cGhReEtEdz09&authuser=0" },
-      { subject: "Укр. Мова", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Читання", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-    ],
-  },
-  {
-    day: "Субота",
-    times: TIME_SATURDAY,
-    lessons: [
-      { subject: "Читання", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Музичне Мистецтво", link: "https://us04web.zoom.us/j/2617768450?pwd=dHh5S3pRYzhaNHRZeEUxbEEyNHhvZz09" },
-      { subject: "Англ. Мова", link: "https://us02web.zoom.us/j/82089068912?pwd=azNVQ04xMnZueWxsbkR4cGhReEtEdz09&authuser=0" },
-      { subject: "Математика", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-      { subject: "Фізкультура", link: "https://us05web.zoom.us/j/81591285811?pwd=N6ltxdUAmJi0RbjumcPaUVixf0SE2G.1" },
-    ],
-  },
-  { day: "Неділя", lessons: [], times: [] },
-  { day: "Понеділок", lessons: [], times: [] },
-];
-export default function Timetable() {
+interface DaySchedule {
+  day: string;
+  times: string[];
+  lessons: Lesson[];
+}
+
+interface TimetableProps {
+  scheduleData: DaySchedule[];
+}
+
+export default function Timetable({ scheduleData }: TimetableProps) {
   const [now, setNow] = useState(new Date());
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [lastPlayedTime, setLastPlayedTime] = useState("");
+  const { hideWeekends } = useHideWeekends();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Звук дзвінка
+    setMounted(true);
     audioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
     audioRef.current.load();
 
@@ -103,7 +57,6 @@ export default function Timetable() {
 
         const diff = lessonStart.getTime() - currentTime.getTime();
 
-        // Граємо за 5 секунд до початку (між 5000мс та 4000мс до старту)
         if (diff <= 5000 && diff > 4000 && lastPlayedTime !== startTimeStr) {
           if (audioRef.current) {
             audioRef.current.currentTime = 0;
@@ -117,7 +70,6 @@ export default function Timetable() {
 
   const enableAudio = () => {
     setIsAudioEnabled(true);
-    // Робимо тестовий запуск, щоб браузер дозволив звуки
     if (audioRef.current) {
       audioRef.current.muted = true;
       audioRef.current.play().then(() => {
@@ -150,9 +102,10 @@ export default function Timetable() {
 
   const todayName = new Intl.DateTimeFormat("uk-UA", { weekday: "long" }).format(now);
 
+  if (!mounted) return <div className="p-4 w-full min-h-screen" />;
+
   return (
     <div className="p-4 w-full">
-      {/* ПАНЕЛЬ КЕРУВАННЯ ЗВУКОМ */}
       <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3">
         {!isAudioEnabled ? (
           <button
@@ -178,26 +131,20 @@ export default function Timetable() {
         )}
       </div>
 
-      {/* ШАПКА */}
-      <div className="mb-6 flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-black text-cyan-500 uppercase tracking-tighter">Мій Розклад</h1>
-          <p className="text-lg font-medium">
-            Сьогодні: <span className="capitalize text-blue-600">{todayName}</span>, {now.toLocaleTimeString("uk-UA")}
-          </p>
-        </div>
-      </div>
-
-      {/* СІТКА РОЗКЛАДУ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4">
-        {scheduleData.map((dayData) => {
+      <div className="grid grid-cols-1 md:flex md:*:flex-1 gap-4">
+        {scheduleData?.map((dayData) => {
           const isToday = dayData.day.toLowerCase() === todayName.toLowerCase();
+
+          if (hideWeekends && (!dayData.lessons || dayData.lessons.length === 0)) {
+            return null;
+          }
 
           return (
             <div
               key={dayData.day}
               className={`rounded-2xl border-2 transition-all duration-500 bg-white overflow-hidden
-                ${isToday ? "border-blue-500 shadow-xl ring-4 ring-blue-500/5 scale-[1.02] z-10" : "border-gray-100 opacity-60 hover:opacity-100"}`}
+                ${isToday ? "border-blue-500 shadow-xl ring-4 ring-blue-500/5 scale-[1.02] z-10" : "border-gray-100 opacity-60 hover:opacity-100"}
+                `}
             >
               <div
                 className={`p-3 text-center font-black uppercase text-xs tracking-widest
