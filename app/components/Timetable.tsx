@@ -130,10 +130,14 @@ export default function Timetable({ scheduleData }: TimetableProps) {
           </div>
         )}
       </div>
-
       <div className="grid grid-cols-1 md:flex md:*:flex-1 gap-4">
         {scheduleData?.map((dayData) => {
-          const isToday = dayData.day.toLowerCase() === todayName.toLowerCase();
+          const normalize = (str: string) =>
+            str
+              .toLowerCase()
+              .replace(/['ʼ`‘]/g, "'")
+              .trim();
+          const isToday = normalize(dayData.day.toLowerCase()) === normalize(todayName.toLowerCase());
 
           if (hideWeekends && (!dayData.lessons || dayData.lessons.length === 0)) {
             return null;
@@ -143,8 +147,8 @@ export default function Timetable({ scheduleData }: TimetableProps) {
             <div
               key={dayData.day}
               className={`rounded-2xl border-2 transition-all duration-500 bg-white overflow-hidden
-                ${isToday ? "border-blue-500 shadow-xl ring-4 ring-blue-500/5 scale-[1.02] z-10" : "border-gray-100 opacity-60 hover:opacity-100"}
-                `}
+              ${isToday ? "border-blue-500 shadow-xl ring-4 ring-blue-500/5 scale-[1.02] z-10" : "border-gray-100 opacity-60 hover:opacity-100"}
+              `}
             >
               <div
                 className={`p-3 text-center font-black uppercase text-xs tracking-widest
