@@ -4,22 +4,50 @@ import Link from "next/link";
 import React, { useEffect, useState, useRef } from "react";
 import { useHideWeekends } from "../context/HideWeekendsContext";
 
-interface Lesson {
+interface LessonOption {
   subject: string;
   link: string;
   /** Де відбувається урок: у сховищі або в Коротичі. Задає колір кнопки */
   variant?: string;
 }
 
+interface Lesson extends Partial<LessonOption> {
+  /** Предмети, що чергуються по тижнях: показуємо кілька кнопок в одному слоті */
+  options?: LessonOption[];
+}
+
 /** Урок без посилання нікуди не веде, тому лишається сірим і не клікабельним */
 const NO_LINK = "#";
 
-const lessonTone = (lesson: Lesson, isToday: boolean) => {
-  if (lesson.variant === "korotych") return "bg-red-600 text-white hover:bg-red-700";
-  if (lesson.variant === "shelter") return "bg-green-600 text-white hover:bg-green-700";
-  if (lesson.link === NO_LINK) return "bg-gray-300 text-gray-600";
+const lessonTone = (option: LessonOption, isToday: boolean) => {
+  if (option.variant === "korotych") return "bg-red-600 text-white hover:bg-red-700";
+  if (option.variant === "shelter") return "bg-green-600 text-white hover:bg-green-700";
+  if (option.link === NO_LINK) return "bg-gray-300 text-gray-600";
   return isToday ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-gray-700 border border-gray-100 hover:border-blue-400";
 };
+
+/** Слот може містити один урок або кілька, що чергуються по тижнях */
+const lessonOptions = (lesson: Lesson): LessonOption[] =>
+  lesson.options?.length ? lesson.options : [{ subject: lesson.subject ?? "", link: lesson.link ?? NO_LINK, variant: lesson.variant }];
+
+function LessonButton({ option, active, isToday, compact }: { option: LessonOption; active: boolean; isToday: boolean; compact: boolean }) {
+  const size = compact ? "text-sm p-1.5" : "text-md p-2";
+  const shared = `${size} font-black rounded-lg text-center transition-all shadow-sm`;
+
+  if (option.link === NO_LINK) {
+    return <span className={`${shared} opacity-70 ${active ? "bg-yellow-400 text-yellow-900 scale-105" : lessonTone(option, isToday)}`}>{option.subject}</span>;
+  }
+
+  return (
+    <Link
+      target="_blank"
+      href={option.link}
+      className={`${shared} ${active ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-500 scale-105" : lessonTone(option, isToday)}`}
+    >
+      {option.subject}
+    </Link>
+  );
+}
 
 interface DaySchedule {
   day: string;
@@ -185,23 +213,19 @@ export default function Timetable({ scheduleData }: TimetableProps) {
                           {active && <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>}
                         </div>
 
-                        {lesson.link === NO_LINK ? (
-                          <span
-                            className={`text-md font-black p-2 rounded-lg text-center transition-all shadow-sm opacity-70
-                            ${active ? "bg-yellow-400 text-yellow-900 scale-105" : lessonTone(lesson, isToday)}`}
-                          >
-                            {lesson.subject}
-                          </span>
-                        ) : (
-                          <Link
-                            target="_blank"
-                            href={lesson.link}
-                            className={`text-md font-black p-2 rounded-lg text-center transition-all shadow-sm
-                            ${active ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-500 scale-105" : lessonTone(lesson, isToday)}`}
-                          >
-                            {lesson.subject}
-                          </Link>
-                        )}
+                        {(() => {
+                          const options = lessonOptions(lesson);
+                          const alternating = options.length > 1;
+
+                          return (
+                            <div className="flex flex-col gap-1">
+                              {options.map((option, optionIdx) => (
+                                <LessonButton key={optionIdx} option={option} active={active} isToday={isToday} compact={alternating} />
+                              ))}
+                              {alternating && <p className="text-[9px] text-center text-gray-400 font-bold uppercase tracking-wider">через тиждень</p>}
+                            </div>
+                          );
+                        })()}
 
                         {active && <p className="text-[9px] text-center font-bold text-yellow-600 uppercase mt-1 animate-pulse">Зараз іде урок</p>}
                       </div>

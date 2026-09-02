@@ -21,7 +21,13 @@ export const scheduleData = [
     day: "Понеділок",
     times: TIME_WEEKDAY,
     lessons: [
-      { subject: "Інформ. / СЕЕН", link: NONE },
+      // Чергуються по тижнях, тому два окремих посилання в одному слоті
+      {
+        options: [
+          { subject: "Інформатика", link: NONE },
+          { subject: "СЕЕН", link: NONE },
+        ],
+      },
       { subject: "Математика", link: ZOOM.math },
       { subject: "Англ. мова", link: ZOOM.english },
       { subject: "Україн. мова", link: ZOOM.ukrainian },
