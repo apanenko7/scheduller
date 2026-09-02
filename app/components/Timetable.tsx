@@ -7,7 +7,19 @@ import { useHideWeekends } from "../context/HideWeekendsContext";
 interface Lesson {
   subject: string;
   link: string;
+  /** Де відбувається урок: у сховищі або в Коротичі. Задає колір кнопки */
+  variant?: string;
 }
+
+/** Урок без посилання нікуди не веде, тому лишається сірим і не клікабельним */
+const NO_LINK = "#";
+
+const lessonTone = (lesson: Lesson, isToday: boolean) => {
+  if (lesson.variant === "korotych") return "bg-red-600 text-white hover:bg-red-700";
+  if (lesson.variant === "shelter") return "bg-green-600 text-white hover:bg-green-700";
+  if (lesson.link === NO_LINK) return "bg-gray-300 text-gray-600";
+  return isToday ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-gray-700 border border-gray-100 hover:border-blue-400";
+};
 
 interface DaySchedule {
   day: string;
@@ -173,20 +185,23 @@ export default function Timetable({ scheduleData }: TimetableProps) {
                           {active && <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>}
                         </div>
 
-                        <Link
-                          target="_blank"
-                          href={lesson.link}
-                          className={`text-md font-black p-2 rounded-lg text-center transition-all shadow-sm
-                            ${
-                              active
-                                ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-500 scale-105"
-                                : isToday
-                                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                                  : "bg-white text-gray-700 border border-gray-100 hover:border-blue-400"
-                            }`}
-                        >
-                          {lesson.subject}
-                        </Link>
+                        {lesson.link === NO_LINK ? (
+                          <span
+                            className={`text-md font-black p-2 rounded-lg text-center transition-all shadow-sm
+                            ${active ? "bg-yellow-400 text-yellow-900 scale-105" : lessonTone(lesson, isToday)}`}
+                          >
+                            {lesson.subject}
+                          </span>
+                        ) : (
+                          <Link
+                            target="_blank"
+                            href={lesson.link}
+                            className={`text-md font-black p-2 rounded-lg text-center transition-all shadow-sm
+                            ${active ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-500 scale-105" : lessonTone(lesson, isToday)}`}
+                          >
+                            {lesson.subject}
+                          </Link>
+                        )}
 
                         {active && <p className="text-[9px] text-center font-bold text-yellow-600 uppercase mt-1 animate-pulse">Зараз іде урок</p>}
                       </div>
