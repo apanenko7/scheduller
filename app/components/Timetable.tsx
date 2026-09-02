@@ -187,7 +187,7 @@ export default function Timetable({ scheduleData }: TimetableProps) {
 
                         {lesson.link === NO_LINK ? (
                           <span
-                            className={`text-md font-black p-2 rounded-lg text-center transition-all shadow-sm
+                            className={`text-md font-black p-2 rounded-lg text-center transition-all shadow-sm opacity-70
                             ${active ? "bg-yellow-400 text-yellow-900 scale-105" : lessonTone(lesson, isToday)}`}
                           >
                             {lesson.subject}
