@@ -25,17 +25,17 @@ interface CapybaraSpriteProps {
 export default function CapybaraSprite({ stepping, fast, asleep, chewing, grass, squatting, excited }: CapybaraSpriteProps) {
   const legClass = stepping ? `critter-leg${fast ? " critter-leg--fast" : ""}` : "";
   const legOffbeat = stepping ? `${legClass} critter-leg--offbeat` : "";
-  const legHeight = asleep ? 4 : squatting ? 5.5 : 9;
+  const legHeight = asleep ? 4 : squatting ? 6 : 12;
   const bodyClass = asleep ? "critter-breathe" : stepping ? `critter-bob${fast ? " critter-bob--fast" : ""}` : undefined;
 
   return (
     <svg width={CAPY_W} height={CAPY_H} viewBox="0 0 66 46">
       <g transform={asleep ? "translate(0 6)" : squatting ? "translate(0 4)" : undefined}>
         <g fill="#6f4f34">
-          <rect className={legClass} x="14" y="28" width="5.5" height={legHeight} rx="2.5" />
-          <rect className={legOffbeat} x="21" y="28" width="5.5" height={legHeight} rx="2.5" />
-          <rect className={legOffbeat} x="34" y="28" width="5.5" height={legHeight} rx="2.5" />
-          <rect className={legClass} x="41" y="28" width="5.5" height={legHeight} rx="2.5" />
+          <rect className={legClass} x="14" y="27" width="5" height={legHeight} rx="2.5" />
+          <rect className={legOffbeat} x="21" y="27" width="5" height={legHeight} rx="2.5" />
+          <rect className={legOffbeat} x="34" y="27" width="5" height={legHeight} rx="2.5" />
+          <rect className={legClass} x="41" y="27" width="5" height={legHeight} rx="2.5" />
         </g>
 
         <g className={bodyClass}>

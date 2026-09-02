@@ -20,14 +20,18 @@ body {
 }
 
 /* Звірята: крок лапами, дихання, жування, сон та щелепи крокодила */
+/* Лапа не просто гойдається, а піднімається на середині кроку — так рух читається як хода */
 @keyframes critter-step {
-  0%, 100% { transform: rotate(-18deg); }
-  50% { transform: rotate(18deg); }
+  0% { transform: rotate(-26deg) translateY(0); }
+  25% { transform: rotate(0deg) translateY(-2.5px); }
+  50% { transform: rotate(26deg) translateY(0); }
+  75% { transform: rotate(0deg) translateY(-2.5px); }
+  100% { transform: rotate(-26deg) translateY(0); }
 }
 
 @keyframes critter-bob {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-1.5px); }
+  50% { transform: translateY(-2.5px); }
 }
 
 @keyframes critter-breathe {
@@ -66,13 +70,13 @@ body {
 
 /* Лапи гойдаються від плеча, тому обертаємо навколо верхнього краю */
 .critter-leg {
-  animation: critter-step 0.44s ease-in-out infinite;
+  animation: critter-step 0.4s linear infinite;
   transform-box: fill-box;
   transform-origin: center top;
 }
 
 .critter-leg--offbeat {
-  animation-delay: -0.22s;
+  animation-delay: -0.2s;
 }
 
 .critter-leg--fast {
@@ -84,7 +88,7 @@ body {
 }
 
 .critter-bob {
-  animation: critter-bob 0.44s ease-in-out infinite;
+  animation: critter-bob 0.4s ease-in-out infinite;
   transform-box: fill-box;
 }
 
