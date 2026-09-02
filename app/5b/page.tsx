@@ -13,7 +13,7 @@ export default function Page() {
     <>
       <StarrySky />
       <Timetable scheduleData={scheduleData} />
-      <Capybara />
+      <Capybara scheduleData={scheduleData} />
     </>
   );
 }

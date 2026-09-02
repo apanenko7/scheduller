@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import CapybaraSprite, { CAPY_H, CAPY_W } from "./CapybaraSprite";
 import CrocodileSprite, { CROC_H, CROC_W } from "./CrocodileSprite";
+import { DaySchedule, isLessonNow } from "../lib/schedule";
 
 type Mood = "walk" | "sleep" | "eat" | "chase" | "seek" | "tangerine" | "poop";
 
@@ -28,6 +29,7 @@ const COLLECT_DISTANCE = 30;
 
 const MAX_POOPS = 6;
 const POOP_LIFETIME = 18000;
+const LESSON_CHECK_MS = 5000;
 const BEST_TIME_KEY = "capybaraBestScore";
 const BEST_FRUIT_KEY = "capybaraBestFruit";
 
@@ -74,9 +76,10 @@ function Tangerine() {
   );
 }
 
-export default function Capybara() {
+export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[] }) {
   const [mood, setMood] = useState<Mood>("walk");
   const [gameOn, setGameOn] = useState(false);
+  const [lessonNow, setLessonNow] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [ready, setReady] = useState(false);
   const [tangerine, setTangerine] = useState<number | null>(null);
@@ -277,6 +280,23 @@ export default function Capybara() {
     return () => cancelAnimationFrame(frame);
   }, [gameOn, reduceMotion, finishGame]);
 
+  // Під час уроку гра недоступна: setState з тим самим значенням React відкидає,
+  // тому щоп'ятисекундна перевірка не викликає лишніх перемальовувань
+  useEffect(() => {
+    const check = () => setLessonNow(isLessonNow(scheduleData, new Date()));
+    check();
+    const timer = setInterval(check, LESSON_CHECK_MS);
+    return () => clearInterval(timer);
+  }, [scheduleData]);
+
+  // Якщо урок почався посеред гри, гра зупиняється без запису результату
+  useEffect(() => {
+    if (!lessonNow || !gameOn) return;
+    setGameOn(false);
+    setFruit([]);
+    fruitRef.current = [];
+  }, [lessonNow, gameOn]);
+
   // Настрій змінюється сам, поки гра не увімкнена
   useEffect(() => {
     if (gameOn || reduceMotion) return;
@@ -342,6 +362,8 @@ export default function Capybara() {
       fruitRef.current = [];
       return;
     }
+
+    if (lessonNow) return;
 
     setResult(null);
     setPoops([]);
@@ -448,13 +470,23 @@ export default function Capybara() {
           </div>
         )}
 
+        {lessonNow && (
+          <div className="rounded-xl bg-black/70 px-3 py-2 text-[11px] font-bold text-white shadow-lg">
+            <p>📚 Зараз урок</p>
+            <p className="mt-0.5 font-medium opacity-70">Гра буде доступна на перерві</p>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={toggleGame}
           aria-pressed={gameOn}
-          className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-lg transition ${gameOn ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-800"}`}
+          disabled={lessonNow}
+          className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-lg transition ${
+            lessonNow ? "bg-gray-600 opacity-60 cursor-not-allowed" : gameOn ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-800"
+          }`}
         >
-          {gameOn ? "🐊 Зупинити гру" : "🐊 Гра з крокодилом"}
+          {lessonNow ? "🐊 Гра після уроку" : gameOn ? "🐊 Зупинити гру" : "🐊 Гра з крокодилом"}
         </button>
       </div>
     </>

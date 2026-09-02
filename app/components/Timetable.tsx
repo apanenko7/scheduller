@@ -3,21 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useState, useRef } from "react";
 import { useHideWeekends } from "../context/HideWeekendsContext";
-
-interface LessonOption {
-  subject: string;
-  link: string;
-  /** Де відбувається урок: у сховищі або в Коротичі. Задає колір кнопки */
-  variant?: string;
-}
-
-interface Lesson extends Partial<LessonOption> {
-  /** Предмети, що чергуються по тижнях: показуємо кілька кнопок в одному слоті */
-  options?: LessonOption[];
-}
-
-/** Урок без посилання нікуди не веде, тому лишається сірим і не клікабельним */
-const NO_LINK = "#";
+import { DaySchedule, LessonOption, NO_LINK, isWithinLesson, lessonOptions, normalizeDay } from "../lib/schedule";
 
 const lessonTone = (option: LessonOption, isToday: boolean) => {
   if (option.variant === "korotych") return "bg-red-600 text-white hover:bg-red-700";
@@ -25,10 +11,6 @@ const lessonTone = (option: LessonOption, isToday: boolean) => {
   if (option.link === NO_LINK) return "bg-gray-300 text-gray-600";
   return isToday ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-gray-700 border border-gray-100 hover:border-blue-400";
 };
-
-/** Слот може містити один урок або кілька, що чергуються по тижнях */
-const lessonOptions = (lesson: Lesson): LessonOption[] =>
-  lesson.options?.length ? lesson.options : [{ subject: lesson.subject ?? "", link: lesson.link ?? NO_LINK, variant: lesson.variant }];
 
 function LessonButton({ option, active, isToday, compact }: { option: LessonOption; active: boolean; isToday: boolean; compact: boolean }) {
   // У рядку з кількох кнопок місця вдвічі менше, тому шрифт дрібніший
@@ -40,20 +22,10 @@ function LessonButton({ option, active, isToday, compact }: { option: LessonOpti
   }
 
   return (
-    <Link
-      target="_blank"
-      href={option.link}
-      className={`${shared} ${active ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-500 scale-105" : lessonTone(option, isToday)}`}
-    >
+    <Link target="_blank" href={option.link} className={`${shared} ${active ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-500 scale-105" : lessonTone(option, isToday)}`}>
       {option.subject}
     </Link>
   );
-}
-
-interface DaySchedule {
-  day: string;
-  times: string[];
-  lessons: Lesson[];
 }
 
 interface TimetableProps {
@@ -128,18 +100,7 @@ export default function Timetable({ scheduleData }: TimetableProps) {
     }
   };
 
-  const isCurrentLesson = (timeRange: string, isToday: boolean) => {
-    if (!isToday || !timeRange) return false;
-    const [start, end] = timeRange.split(" - ");
-    const [startH, startM] = start.split(":").map(Number);
-    const [endH, endM] = end.split(":").map(Number);
-
-    const startTime = new Date(now).setHours(startH, startM, 0);
-    const endTime = new Date(now).setHours(endH, endM, 0);
-    const currentTime = now.getTime();
-
-    return currentTime >= startTime && currentTime <= endTime;
-  };
+  const isCurrentLesson = (timeRange: string, isToday: boolean) => isToday && isWithinLesson(timeRange, now);
 
   const todayName = new Intl.DateTimeFormat("uk-UA", { weekday: "long" }).format(now);
 
@@ -173,12 +134,7 @@ export default function Timetable({ scheduleData }: TimetableProps) {
       </div>
       <div className="grid grid-cols-1 md:flex md:*:flex-1 gap-4">
         {scheduleData?.map((dayData) => {
-          const normalize = (str: string) =>
-            str
-              .toLowerCase()
-              .replace(/['ʼ`‘]/g, "'")
-              .trim();
-          const isToday = normalize(dayData.day.toLowerCase()) === normalize(todayName.toLowerCase());
+          const isToday = normalizeDay(dayData.day) === normalizeDay(todayName);
 
           if (hideWeekends && (!dayData.lessons || dayData.lessons.length === 0)) {
             return null;
@@ -226,7 +182,6 @@ export default function Timetable({ scheduleData }: TimetableProps) {
                                   <LessonButton key={optionIdx} option={option} active={active} isToday={isToday} compact={alternating} />
                                 ))}
                               </div>
-                              {alternating && <p className="text-[9px] text-center text-gray-400 font-bold uppercase tracking-wider">через тиждень</p>}
                             </div>
                           );
                         })()}
