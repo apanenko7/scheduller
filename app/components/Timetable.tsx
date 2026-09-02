@@ -5,6 +5,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { useHideWeekends } from "../context/HideWeekendsContext";
 import { DaySchedule, LessonOption, NO_LINK, isWithinLesson, lessonOptions, normalizeDay } from "../lib/schedule";
 
+const BELL_SOUND = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+
+/** Чи користувач уже увімкнув дзвінок. Переживає рефреш сторінки */
+const BELL_KEY = "bellEnabled";
+
 const lessonTone = (option: LessonOption, isToday: boolean) => {
   if (option.variant === "korotych") return "bg-red-600 text-white hover:bg-red-700";
   if (option.variant === "shelter") return "bg-green-600 text-white hover:bg-green-700";
@@ -40,11 +45,15 @@ export default function Timetable({ scheduleData }: TimetableProps) {
   const { hideWeekends } = useHideWeekends();
   const [mounted, setMounted] = useState(false);
 
+  // Audio створюємо один раз: якби елемент перестворювався, губився б дозвіл
+  // на звук, який браузер видає лише після клацання користувача
   useEffect(() => {
     setMounted(true);
-    audioRef.current = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+    audioRef.current = new Audio(BELL_SOUND);
     audioRef.current.load();
+  }, []);
 
+  useEffect(() => {
     const timer = setInterval(() => {
       const currentTime = new Date();
       setNow(currentTime);
@@ -53,6 +62,40 @@ export default function Timetable({ scheduleData }: TimetableProps) {
 
     return () => clearInterval(timer);
   }, [lastPlayedTime, isAudioEnabled]);
+
+  /** Тиха спроба розблокувати звук. Повертає false, якщо браузер відмовив */
+  const unlockAudio = async () => {
+    const audio = audioRef.current;
+    if (!audio) return false;
+
+    audio.muted = true;
+    try {
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      return true;
+    } catch {
+      return false;
+    } finally {
+      audio.muted = false;
+    }
+  };
+
+  // Після рефрешу дозвіл на автоплей може не діяти, тому вибір користувача
+  // відновлюємо лише якщо звук справді вдалося розблокувати
+  useEffect(() => {
+    if (!mounted) return;
+    if (localStorage.getItem(BELL_KEY) !== "true") return;
+
+    let cancelled = false;
+    unlockAudio().then((ok) => {
+      if (ok && !cancelled) setIsAudioEnabled(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted]);
 
   const checkForBell = (currentTime: Date) => {
     if (!isAudioEnabled) return;
@@ -81,16 +124,11 @@ export default function Timetable({ scheduleData }: TimetableProps) {
     }
   };
 
-  const enableAudio = () => {
+  const enableAudio = async () => {
+    if (!(await unlockAudio())) return;
+
     setIsAudioEnabled(true);
-    if (audioRef.current) {
-      audioRef.current.muted = true;
-      audioRef.current.play().then(() => {
-        audioRef.current?.pause();
-        audioRef.current!.muted = false;
-        audioRef.current!.currentTime = 0;
-      });
-    }
+    localStorage.setItem(BELL_KEY, "true");
   };
 
   const playTestSound = () => {
