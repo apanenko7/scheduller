@@ -19,53 +19,105 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Капібара: анімація лап, дихання, жування та сну */
-@keyframes capybara-leg {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2.5px); }
+/* Звірята: крок лапами, дихання, жування, сон та щелепи крокодила */
+@keyframes critter-step {
+  0%, 100% { transform: rotate(-18deg); }
+  50% { transform: rotate(18deg); }
 }
 
-@keyframes capybara-breathe {
+@keyframes critter-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+@keyframes critter-breathe {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-1.2px); }
 }
 
-@keyframes capybara-chew {
+@keyframes critter-chew {
   0%, 100% { transform: rotate(0deg); }
   50% { transform: rotate(5deg); }
 }
 
-@keyframes capybara-snore {
+@keyframes critter-snore {
   0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
   30% { opacity: 1; }
   100% { opacity: 0; transform: translate(7px, -13px) scale(1.15); }
 }
 
-.capybara-leg {
-  animation: capybara-leg 0.42s ease-in-out infinite;
+@keyframes critter-chomp {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(13deg); }
+}
+
+@keyframes critter-fade {
+  0% { opacity: 0; transform: scale(0.5); }
+  12% { opacity: 1; transform: scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: scale(0.9); }
+}
+
+@keyframes critter-pop {
+  0% { opacity: 0; transform: scale(0.3); }
+  60% { transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Лапи гойдаються від плеча, тому обертаємо навколо верхнього краю */
+.critter-leg {
+  animation: critter-step 0.44s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center top;
+}
+
+.critter-leg--offbeat {
+  animation-delay: -0.22s;
+}
+
+.critter-leg--fast {
+  animation-duration: 0.24s;
+}
+
+.critter-leg--fast.critter-leg--offbeat {
+  animation-delay: -0.12s;
+}
+
+.critter-bob {
+  animation: critter-bob 0.44s ease-in-out infinite;
   transform-box: fill-box;
 }
 
-.capybara-leg--offbeat {
-  animation-delay: 0.21s;
+.critter-bob--fast {
+  animation-duration: 0.24s;
 }
 
-.capybara-leg--fast {
-  animation-duration: 0.22s;
-}
-
-.capybara-breathe {
-  animation: capybara-breathe 2.6s ease-in-out infinite;
+.critter-breathe {
+  animation: critter-breathe 2.6s ease-in-out infinite;
   transform-box: fill-box;
 }
 
-.capybara-chew {
-  animation: capybara-chew 0.5s ease-in-out infinite;
+.critter-chew {
+  animation: critter-chew 0.5s ease-in-out infinite;
   transform-box: fill-box;
   transform-origin: left center;
 }
 
-.capybara-snore {
-  animation: capybara-snore 2.4s ease-out infinite;
+.critter-snore {
+  animation: critter-snore 2.4s ease-out infinite;
   transform-box: fill-box;
+}
+
+.critter-chomp {
+  animation: critter-chomp 0.3s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+
+.critter-fade {
+  animation: critter-fade 18s linear forwards;
+}
+
+.critter-pop {
+  animation: critter-pop 0.35s ease-out forwards;
 }
