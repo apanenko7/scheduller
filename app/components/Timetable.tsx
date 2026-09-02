@@ -31,7 +31,8 @@ const lessonOptions = (lesson: Lesson): LessonOption[] =>
   lesson.options?.length ? lesson.options : [{ subject: lesson.subject ?? "", link: lesson.link ?? NO_LINK, variant: lesson.variant }];
 
 function LessonButton({ option, active, isToday, compact }: { option: LessonOption; active: boolean; isToday: boolean; compact: boolean }) {
-  const size = compact ? "text-sm p-1.5" : "text-md p-2";
+  // У рядку з кількох кнопок місця вдвічі менше, тому шрифт дрібніший
+  const size = compact ? "text-xs p-1.5 flex-1 min-w-0" : "text-md p-2";
   const shared = `${size} font-black rounded-lg text-center transition-all shadow-sm`;
 
   if (option.link === NO_LINK) {
@@ -219,9 +220,12 @@ export default function Timetable({ scheduleData }: TimetableProps) {
 
                           return (
                             <div className="flex flex-col gap-1">
-                              {options.map((option, optionIdx) => (
-                                <LessonButton key={optionIdx} option={option} active={active} isToday={isToday} compact={alternating} />
-                              ))}
+                              {/* Предмети, що чергуються, стоять поруч в один рядок */}
+                              <div className={alternating ? "flex gap-1" : "flex flex-col"}>
+                                {options.map((option, optionIdx) => (
+                                  <LessonButton key={optionIdx} option={option} active={active} isToday={isToday} compact={alternating} />
+                                ))}
+                              </div>
                               {alternating && <p className="text-[9px] text-center text-gray-400 font-bold uppercase tracking-wider">через тиждень</p>}
                             </div>
                           );
