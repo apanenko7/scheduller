@@ -11,6 +11,9 @@ const ZOOM = {
   math: "https://us05web.zoom.us/j/81384953993?pwd=eHNjYlJ0R3RySDJFOEc4cEFGYUJYUT09#success",
   pe: "https://us05web.zoom.us/j/7247905558?pwd=OBgYb8sfHyJfFarbi132sEjC887uuz.1",
   zbd: "https://us04web.zoom.us/j/79726848608?pwd=XajQ4db89HNZxwSpk8cCVQQ4IWvqVb.1#success",
+  history: "https://us04web.zoom.us/j/73709656216?pwd=RnowmD5klOljE4fmYl58E5n3LzpYnh.1",
+  foreignLit: "https://us05web.zoom.us/j/5668804198?pwd=U1ZKM0pNNkFZTzdEdDlqcVBaY2U0dz09&omn=83038747823#success",
+  nature: "https://us04web.zoom.us/j/4260340125?pwd=KReqAVbDLYB7pBn5ffeXt6FAFnu9CT.1",
 } as const;
 
 // Заглушка для уроків, до яких посилання ще немає
@@ -46,7 +49,7 @@ export const scheduleData = [
       { subject: "Математика (сховище)", link: ZOOM.math, variant: "shelter" },
       { subject: "Українська літ. (сховище)", link: ZOOM.ukrainianLit, variant: "shelter" },
       { subject: "Англійська мова (сховище)", link: ZOOM.english, variant: "shelter" },
-      { subject: "Пізнаємо природу (сховище)", link: NONE, variant: "shelter" },
+      { subject: "Пізнаємо природу (сховище)", link: ZOOM.nature, variant: "shelter" },
     ],
   },
   {
@@ -80,10 +83,10 @@ export const scheduleData = [
     day: "П'ятниця",
     times: TIME_WEEKDAY,
     lessons: [
-      { subject: "Зарубіжна літер. (сховище)", link: NONE, variant: "shelter" },
-      { subject: "Історія (сховище)", link: ZOOM.zbd, variant: "shelter" },
-      { subject: "Зарубіжна літер. (сховище)", link: NONE, variant: "shelter" },
-      { subject: "Пізнаємо природу (сховище)", link: NONE, variant: "shelter" },
+      { subject: "Зарубіжна літер. (сховище)", link: ZOOM.foreignLit, variant: "shelter" },
+      { subject: "Історія (сховище)", link: ZOOM.history, variant: "shelter" },
+      { subject: "Зарубіжна літер. (сховище)", link: ZOOM.foreignLit, variant: "shelter" },
+      { subject: "Пізнаємо природу (сховище)", link: ZOOM.nature, variant: "shelter" },
     ],
   },
   { day: "Субота", lessons: [], times: [] },
