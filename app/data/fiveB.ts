@@ -12,7 +12,7 @@ const ZOOM = {
   pe: "https://us05web.zoom.us/j/7247905558?pwd=OBgYb8sfHyJfFarbi132sEjC887uuz.1",
   zbd: "https://us04web.zoom.us/j/79726848608?pwd=XajQ4db89HNZxwSpk8cCVQQ4IWvqVb.1#success",
   history: "https://us04web.zoom.us/j/73709656216?pwd=RnowmD5klOljE4fmYl58E5n3LzpYnh.1",
-  foreignLit: "https://us05web.zoom.us/j/5668804198?pwd=U1ZKM0pNNkFZTzdEdDlqcVBaY2U0dz09&omn=83038747823#success",
+  foreignLit: "https://us05web.zoom.us/j/5668804198?pwd=U1ZKM0pNNkFZTzdEdDlqcVBaY2U0dz09",
   nature: "https://us04web.zoom.us/j/4260340125?pwd=KReqAVbDLYB7pBn5ffeXt6FAFnu9CT.1",
 } as const;
 
