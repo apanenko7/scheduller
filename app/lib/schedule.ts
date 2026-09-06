@@ -26,6 +26,28 @@ export const PLACEHOLDER = "—";
 export const lessonOptions = (lesson: Lesson): LessonOption[] =>
   lesson.options?.length ? lesson.options : [{ subject: lesson.subject ?? "", link: lesson.link ?? NO_LINK, variant: lesson.variant }];
 
+/**
+ * Понеділок, від якого рахуємо парність тижня для предметів, що чергуються
+ * в одному слоті: саме в цей тиждень активний перший варіант (options[0]).
+ */
+const ALTERNATION_ANCHOR = new Date(2026, 8, 7);
+
+const mondayOf = (date: Date) => {
+  const monday = new Date(date);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return monday;
+};
+
+/** Індекс варіанта в options, що діє саме в тиждень reference */
+export const activeOptionIndex = (reference: Date, optionsCount: number) => {
+  if (optionsCount <= 1) return 0;
+
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const weeksDiff = Math.round((mondayOf(reference).getTime() - mondayOf(ALTERNATION_ANCHOR).getTime()) / weekMs);
+  return ((weeksDiff % optionsCount) + optionsCount) % optionsCount;
+};
+
 /** Назви днів приходять з різними апострофами, тому зводимо їх до одного вигляду */
 export const normalizeDay = (value: string) =>
   value

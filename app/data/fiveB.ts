@@ -14,6 +14,10 @@ const ZOOM = {
   history: "https://us04web.zoom.us/j/73709656216?pwd=RnowmD5klOljE4fmYl58E5n3LzpYnh.1",
   foreignLit: "https://us05web.zoom.us/j/5668804198?pwd=U1ZKM0pNNkFZTzdEdDlqcVBaY2U0dz09",
   nature: "https://us04web.zoom.us/j/4260340125?pwd=KReqAVbDLYB7pBn5ffeXt6FAFnu9CT.1",
+  // Той самий Zoom, що й Пізнаємо природу
+  seen: "https://us04web.zoom.us/j/4260340125?pwd=KReqAVbDLYB7pBn5ffeXt6FAFnu9CT.1",
+  technology: "https://us04web.zoom.us/j/73770296742?pwd=eS9HCcnf9pR3hOcmQCpDzLwGB96XvR.1",
+  art: "https://us04web.zoom.us/j/7157864316?pwd=OGhENUFyZWF4ckVzTnFLUExvWTFsQT09",
 } as const;
 
 // Заглушка для уроків, до яких посилання ще немає
@@ -24,18 +28,20 @@ export const scheduleData = [
     day: "Понеділок",
     times: TIME_WEEKDAY,
     lessons: [
-      // Чергуються по тижнях, тому два окремих посилання в одному слоті
+      // Чергуються по тижнях, тому два окремих посилання в одному слоті.
+      // options[0] відповідає тижню 7 вересня 2026 — далі чергування рахується
+      // автоматично від цієї дати, див. activeOptionIndex() у lib/schedule.ts
       {
         options: [
+          { subject: "СЕЕН", link: ZOOM.seen },
           { subject: "Інформатика", link: NONE },
-          { subject: "СЕЕН", link: NONE },
         ],
       },
       { subject: "Математика", link: ZOOM.math },
       { subject: "Англ. мова", link: ZOOM.english },
       { subject: "Україн. мова", link: ZOOM.ukrainian },
-      { subject: "Технології", link: NONE },
-      { subject: "Образотв. мист.", link: NONE },
+      { subject: "Технології", link: ZOOM.technology },
+      { subject: "Образотв. мист.", link: ZOOM.art },
     ],
   },
   {
