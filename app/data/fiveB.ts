@@ -18,6 +18,7 @@ const ZOOM = {
   seen: "https://us04web.zoom.us/j/4260340125?pwd=KReqAVbDLYB7pBn5ffeXt6FAFnu9CT.1",
   technology: "https://us04web.zoom.us/j/73770296742?pwd=eS9HCcnf9pR3hOcmQCpDzLwGB96XvR.1",
   art: "https://us04web.zoom.us/j/7157864316?pwd=OGhENUFyZWF4ckVzTnFLUExvWTFsQT09",
+  informatics: "https://us05web.zoom.us/j/6822362972?pwd=STNDSVdVK292Q1hwMVR0eVBxODc5Zz09",
 } as const;
 
 // Заглушка для уроків, до яких посилання ще немає
@@ -34,7 +35,7 @@ export const scheduleData = [
       {
         options: [
           { subject: "СЕЕН", link: ZOOM.seen },
-          { subject: "Інформатика", link: NONE },
+          { subject: "Інформатика", link: ZOOM.informatics },
         ],
       },
       { subject: "Математика", link: ZOOM.math },
@@ -51,7 +52,7 @@ export const scheduleData = [
       { subject: "—", link: NONE },
       { subject: "Фізична культ.", link: ZOOM.pe },
       { subject: "Математика", link: ZOOM.math },
-      { subject: "Інформатика", link: NONE },
+      { subject: "Інформатика", link: ZOOM.informatics },
       { subject: "Математика (сховище)", link: ZOOM.math, variant: "shelter" },
       { subject: "Українська літ. (сховище)", link: ZOOM.ukrainianLit, variant: "shelter" },
       { subject: "Англійська мова (сховище)", link: ZOOM.english, variant: "shelter" },
