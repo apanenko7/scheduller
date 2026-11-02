@@ -34,8 +34,8 @@ export const scheduleData = [
       // автоматично від цієї дати, див. activeOptionIndex() у lib/schedule.ts
       {
         options: [
-          { subject: "СЕЕН", link: ZOOM.seen },
           { subject: "Інформатика", link: ZOOM.informatics },
+          { subject: "СЕЕН", link: ZOOM.seen },
         ],
       },
       { subject: "Математика", link: ZOOM.math },
