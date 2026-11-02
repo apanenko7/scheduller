@@ -5,7 +5,7 @@ import CapybaraSprite, { CAPY_H, CAPY_W } from "./CapybaraSprite";
 import CrocodileSprite, { CROC_H, CROC_W } from "./CrocodileSprite";
 import { DaySchedule, isLessonNow } from "../lib/schedule";
 
-type Mood = "walk" | "sleep" | "eat" | "chase" | "seek" | "tangerine" | "poop";
+type Mood = "walk" | "sleep" | "eat" | "chase" | "seek" | "tangerine" | "poop" | "bath" | "hop" | "butterfly" | "think" | "sneeze" | "stargaze";
 
 const FLOOR_GAP = 10;
 const PET_SPEED = 38;
@@ -18,6 +18,15 @@ const CROC_START_SPEED = 145;
 const CROC_RAMP = 6; // на скільки px/s крокодил прискорюється за кожну секунду гри
 const CROC_MAX_SPEED = 430;
 const CATCH_DISTANCE = 30;
+const CROC_TURN = 3.2; // як швидко крокодил доводить курс до цілі: менше — ширші розвороти
+const CROC_LUNGE_RANGE = 150;
+const CROC_LUNGE_BOOST = 1.7;
+const CROC_LUNGE_MS = 380;
+const CROC_LUNGE_COOLDOWN = 2200;
+const CROC_MAX_TILT = 0.45; // радіан: нахил тулуба вгору-вниз по курсу
+
+/** Гра керується курсором миші, тож на сенсорних і вузьких екранах її не показуємо */
+const NO_GAME_QUERY = "(pointer: coarse), (max-width: 767px)";
 
 const FRUIT_W = 18;
 const FRUIT_H = 20;
@@ -41,9 +50,35 @@ const DURATION: Record<Mood, [number, number]> = {
   seek: [11000, 13000], // запобіжник, якщо до мандаринки чомусь не дійти
   tangerine: [2400, 3400],
   poop: [2000, 2800],
+  bath: [7000, 11000],
+  hop: [1800, 2600],
+  butterfly: [5000, 8000],
+  think: [3500, 5500],
+  sneeze: [1600, 1900],
+  stargaze: [4000, 7000],
 };
 
-const MOOD_POOL: Mood[] = ["walk", "walk", "walk", "sleep", "eat", "chase", "seek", "seek", "poop"];
+const MOOD_POOL: Mood[] = [
+  "walk",
+  "walk",
+  "walk",
+  "walk",
+  "sleep",
+  "eat",
+  "chase",
+  "seek",
+  "seek",
+  "poop",
+  "bath",
+  "hop",
+  "butterfly",
+  "think",
+  "sneeze",
+  "stargaze",
+];
+
+// Про що мріє капібара в бульбашці думок
+const THOUGHTS = ["🍊", "🍉", "🪐", "⭐", "📚", "🛁", "🐊", "🌈", "🍎", "💤"];
 
 interface Poop {
   id: number;
@@ -81,9 +116,11 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
   const [gameOn, setGameOn] = useState(false);
   const [lessonNow, setLessonNow] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [gameAvailable, setGameAvailable] = useState(false);
   const [ready, setReady] = useState(false);
   const [tangerine, setTangerine] = useState<number | null>(null);
   const [poops, setPoops] = useState<Poop[]>([]);
+  const [thought, setThought] = useState(THOUGHTS[0]);
   const [fruit, setFruit] = useState<Fruit[]>([]);
   const [collected, setCollected] = useState(0);
   const [bestTime, setBestTime] = useState(0);
@@ -104,6 +141,10 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
   const crocPos = useRef({ x: 0, y: 0 });
   const capyDir = useRef<1 | -1>(1);
   const crocDir = useRef<1 | -1>(1);
+  const crocVel = useRef({ x: 0, y: 0 });
+  const crocTilt = useRef(0);
+  const lungeUntil = useRef(0);
+  const lungeReadyAt = useRef(0);
   const pointer = useRef({ x: 0, y: 0 });
   const startedAt = useRef(0);
   const caught = useRef(false);
@@ -127,6 +168,11 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
     syncMedia();
     media.addEventListener("change", syncMedia);
 
+    const noGame = window.matchMedia(NO_GAME_QUERY);
+    const syncGame = () => setGameAvailable(!noGame.matches);
+    syncGame();
+    noGame.addEventListener("change", syncGame);
+
     capyPos.current = { x: Math.random() * Math.max(0, window.innerWidth - CAPY_W), y: floorY() };
     crocPos.current = { x: -CROC_W, y: floorY() };
     pointer.current = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -142,6 +188,7 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
     return () => {
       window.removeEventListener("pointermove", handlePointer);
       media.removeEventListener("change", syncMedia);
+      noGame.removeEventListener("change", syncGame);
     };
   }, []);
 
@@ -174,7 +221,7 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
       if (capyRef.current) capyRef.current.style.transform = `translate3d(${capyPos.current.x}px, ${capyPos.current.y}px, 0)`;
       if (capyFaceRef.current) capyFaceRef.current.style.transform = `scaleX(${capyDir.current})`;
       if (crocRef.current) crocRef.current.style.transform = `translate3d(${crocPos.current.x}px, ${crocPos.current.y}px, 0)`;
-      if (crocFaceRef.current) crocFaceRef.current.style.transform = `scaleX(${crocDir.current})`;
+      if (crocFaceRef.current) crocFaceRef.current.style.transform = `scaleX(${crocDir.current}) rotate(${crocTilt.current}rad)`;
     };
 
     const loop = (time: number) => {
@@ -217,16 +264,37 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
 
         const elapsed = (time - startedAt.current) / 1000;
         const croc = crocPos.current;
-        const crocSpeed = Math.min(CROC_MAX_SPEED, CROC_START_SPEED + CROC_RAMP * elapsed);
         const cdx = capyCx - (croc.x + CROC_W / 2);
         const cdy = capyCy - (croc.y + CROC_H / 2);
         const chase = Math.hypot(cdx, cdy);
 
+        // Зблизька крокодил робить короткий ривок, потім мусить перепочити
+        if (chase < CROC_LUNGE_RANGE && time >= lungeReadyAt.current) {
+          lungeUntil.current = time + CROC_LUNGE_MS;
+          lungeReadyAt.current = time + CROC_LUNGE_COOLDOWN;
+        }
+        const lunging = time < lungeUntil.current;
+        crocFaceRef.current?.classList.toggle("croc-lunge", lunging);
+
+        const crocSpeed = Math.min(CROC_MAX_SPEED, CROC_START_SPEED + CROC_RAMP * elapsed) * (lunging ? CROC_LUNGE_BOOST : 1);
+
         if (chase > 0.5) {
-          const stride = Math.min(chase, crocSpeed * delta);
-          croc.x += (cdx / chase) * stride;
-          croc.y += (cdy / chase) * stride;
-          if (Math.abs(cdx) > 1) crocDir.current = cdx > 0 ? 1 : -1;
+          // Не повертає миттєво, а плавно доводить швидкість до бажаної:
+          // різкий маневр капібари дає кілька кроків фори
+          const vel = crocVel.current;
+          const turn = Math.min(1, CROC_TURN * delta);
+          vel.x += ((cdx / chase) * crocSpeed - vel.x) * turn;
+          vel.y += ((cdy / chase) * crocSpeed - vel.y) * turn;
+
+          const step = Math.hypot(vel.x, vel.y) * delta;
+          const scale = step > chase ? chase / step : 1;
+          croc.x += vel.x * delta * scale;
+          croc.y += vel.y * delta * scale;
+
+          // Розвертається лише при помітному русі вбік, щоб не смикався на місці
+          if (vel.x > 25) crocDir.current = 1;
+          else if (vel.x < -25) crocDir.current = -1;
+          crocTilt.current = clamp(Math.atan2(vel.y, Math.abs(vel.x) + 1), -CROC_MAX_TILT, CROC_MAX_TILT);
         }
 
         if (timerRef.current) timerRef.current.textContent = elapsed.toFixed(1);
@@ -289,19 +357,25 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
     return () => clearInterval(timer);
   }, [scheduleData]);
 
-  // Якщо урок почався посеред гри, гра зупиняється без запису результату
+  // Якщо урок почався посеред гри або екран став сенсорним чи вузьким,
+  // гра зупиняється без запису результату
   useEffect(() => {
-    if (!lessonNow || !gameOn) return;
+    if ((!lessonNow && gameAvailable) || !gameOn) return;
     setGameOn(false);
     setFruit([]);
     fruitRef.current = [];
-  }, [lessonNow, gameOn]);
+  }, [lessonNow, gameAvailable, gameOn]);
 
   // Настрій змінюється сам, поки гра не увімкнена
   useEffect(() => {
     if (gameOn || reduceMotion) return;
     const [min, max] = DURATION[mood];
-    const timer = setTimeout(() => setMood((current) => pickMood(current)), randomBetween(min, max));
+    const timer = setTimeout(() => {
+      const next = pickMood(mood);
+      // Щоразу нова думка в бульбашці
+      if (next === "think") setThought(THOUGHTS[Math.floor(Math.random() * THOUGHTS.length)]);
+      setMood(next);
+    }, randomBetween(min, max));
     return () => clearTimeout(timer);
   }, [mood, gameOn, reduceMotion]);
 
@@ -383,11 +457,16 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
       y: clamp(capyPos.current.y - randomBetween(-120, 120), 0, Math.max(0, window.innerHeight - CROC_H)),
     };
     crocDir.current = fromLeft ? 1 : -1;
+    crocVel.current = { x: crocDir.current * CROC_START_SPEED, y: 0 };
+    crocTilt.current = 0;
+    lungeUntil.current = 0;
+    lungeReadyAt.current = performance.now() + CROC_LUNGE_COOLDOWN;
     setGameOn(true);
   };
 
   const asleep = !gameOn && (reduceMotion || mood === "sleep");
   const stepping = gameOn || (!asleep && (mood === "walk" || mood === "chase" || mood === "seek"));
+  const calm = !gameOn && !asleep;
   const speedNow = Math.min(GAME_CAPY_MAX_SPEED, GAME_CAPY_SPEED + collected * FRUIT_BOOST);
 
   return (
@@ -397,17 +476,48 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
         aria-hidden="true"
         className={`fixed left-0 top-0 z-40 pointer-events-none will-change-transform transition-opacity ${ready ? "opacity-100" : "opacity-0"}`}
       >
-        <div ref={capyFaceRef}>
-          <CapybaraSprite
-            stepping={stepping}
-            fast={gameOn || mood === "chase"}
-            asleep={asleep}
-            chewing={mood === "eat" || mood === "tangerine"}
-            grass={!gameOn && mood === "eat"}
-            squatting={!gameOn && mood === "poop"}
-            excited={gameOn || mood === "chase"}
-          />
+        {/* Стрибки й чхання — анімації на окремій обгортці: capyFaceRef крутить transform для розвороту */}
+        <div className={calm && mood === "hop" ? "capybara-hop" : calm && mood === "sneeze" ? "capybara-sneeze" : undefined}>
+          <div ref={capyFaceRef}>
+            <CapybaraSprite
+              stepping={stepping}
+              fast={gameOn || mood === "chase"}
+              asleep={asleep}
+              chewing={mood === "eat" || mood === "tangerine"}
+              grass={!gameOn && mood === "eat"}
+              squatting={!gameOn && mood === "poop"}
+              excited={gameOn || mood === "chase" || (calm && mood === "hop")}
+              bathing={calm && mood === "bath"}
+              lookingUp={calm && (mood === "stargaze" || mood === "butterfly")}
+              squinting={calm && mood === "sneeze"}
+            />
+          </div>
         </div>
+
+        {/* Підказки над капібарою не розвертаються разом з нею, тому вони поза capyFaceRef */}
+        {calm && mood === "butterfly" && (
+          <span className="capybara-butterfly absolute left-1/2 -top-6 text-base leading-none">
+            <span className="capybara-flap inline-block">🦋</span>
+          </span>
+        )}
+
+        {calm && mood === "think" && (
+          <span className="critter-pop absolute left-1/2 -top-9 -ml-4 flex size-8 items-center justify-center rounded-full bg-white text-base shadow-md">
+            {thought}
+          </span>
+        )}
+
+        {calm && mood === "sneeze" && (
+          <span className="capybara-achoo absolute left-1/2 -top-6 -ml-6 whitespace-nowrap rounded-lg bg-white px-1.5 py-0.5 text-[10px] font-black text-amber-700 shadow-md">
+            Апчхи!
+          </span>
+        )}
+
+        {calm && mood === "stargaze" && (
+          <span className="critter-snore absolute left-1/2 -top-5 text-sm leading-none" style={{ animationDuration: "1.8s" }}>
+            ✨
+          </span>
+        )}
       </div>
 
       {gameOn && (
@@ -446,49 +556,51 @@ export default function Capybara({ scheduleData }: { scheduleData: DaySchedule[]
         </div>
       ))}
 
-      <div className="fixed bottom-4 left-4 z-50 flex flex-col items-start gap-2">
-        {gameOn && (
-          <div className="rounded-xl bg-black/70 px-3 py-2 text-[11px] font-bold text-white shadow-lg">
-            <p>
-              ⏱ <span ref={timerRef}>0.0</span> с · 🍊 {collected} · {speedNow} px/s
-            </p>
-            {(bestTime > 0 || bestFruit > 0) && (
-              <p className="mt-0.5 opacity-70">
-                Рекорд: {bestTime.toFixed(1)} с · {bestFruit} 🍊
+      {gameAvailable && (
+        <div className="fixed bottom-4 left-4 z-50 flex flex-col items-start gap-2">
+          {gameOn && (
+            <div className="rounded-xl bg-black/70 px-3 py-2 text-[11px] font-bold text-white shadow-lg">
+              <p>
+                ⏱ <span ref={timerRef}>0.0</span> с · 🍊 {collected} · {speedNow} px/s
               </p>
-            )}
-            <p className="mt-0.5 font-medium opacity-70">Збирай мандаринки — з ними капібара швидша за крокодила!</p>
-          </div>
-        )}
+              {(bestTime > 0 || bestFruit > 0) && (
+                <p className="mt-0.5 opacity-70">
+                  Рекорд: {bestTime.toFixed(1)} с · {bestFruit} 🍊
+                </p>
+              )}
+              <p className="mt-0.5 font-medium opacity-70">Збирай мандаринки — з ними капібара швидша за крокодила!</p>
+            </div>
+          )}
 
-        {result !== null && !gameOn && (
-          <div className="rounded-xl bg-red-600/90 px-3 py-2 text-[11px] font-bold text-white shadow-lg">
-            <p>
-              🐊 Наздогнав! {result.time.toFixed(1)} с · зібрано {result.fruit} 🍊
-            </p>
-            {(result.time >= bestTime && result.time > 0) || (result.fruit >= bestFruit && result.fruit > 0) ? <p className="mt-0.5 opacity-80">Новий рекорд!</p> : null}
-          </div>
-        )}
+          {result !== null && !gameOn && (
+            <div className="rounded-xl bg-red-600/90 px-3 py-2 text-[11px] font-bold text-white shadow-lg">
+              <p>
+                🐊 Наздогнав! {result.time.toFixed(1)} с · зібрано {result.fruit} 🍊
+              </p>
+              {(result.time >= bestTime && result.time > 0) || (result.fruit >= bestFruit && result.fruit > 0) ? <p className="mt-0.5 opacity-80">Новий рекорд!</p> : null}
+            </div>
+          )}
 
-        {lessonNow && (
-          <div className="rounded-xl bg-black/70 px-3 py-2 text-[11px] font-bold text-white shadow-lg">
-            <p>📚 Зараз урок</p>
-            <p className="mt-0.5 font-medium opacity-70">Гра буде доступна на перерві</p>
-          </div>
-        )}
+          {lessonNow && (
+            <div className="rounded-xl bg-black/70 px-3 py-2 text-[11px] font-bold text-white shadow-lg">
+              <p>📚 Зараз урок</p>
+              <p className="mt-0.5 font-medium opacity-70">Гра буде доступна на перерві</p>
+            </div>
+          )}
 
-        <button
-          type="button"
-          onClick={toggleGame}
-          aria-pressed={gameOn}
-          disabled={lessonNow}
-          className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-lg transition ${
-            lessonNow ? "bg-gray-600 opacity-60 cursor-not-allowed" : gameOn ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-800"
-          }`}
-        >
-          {lessonNow ? "🐊 Гра після уроку" : gameOn ? "🐊 Зупинити гру" : "🐊 Гра з крокодилом"}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={toggleGame}
+            aria-pressed={gameOn}
+            disabled={lessonNow}
+            className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-lg transition ${
+              lessonNow ? "bg-gray-600 opacity-60 cursor-not-allowed" : gameOn ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-800"
+            }`}
+          >
+            {lessonNow ? "🐊 Гра після уроку" : gameOn ? "🐊 Зупинити гру" : "🐊 Гра з крокодилом"}
+          </button>
+        </div>
+      )}
     </>
   );
 }

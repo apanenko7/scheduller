@@ -15,15 +15,17 @@ npm run lint
 | Шлях | Що там |
 |---|---|
 | [app/page.tsx](app/page.tsx) | список класів (посилання на `/5b`, `/7g`) |
-| [app/5b/page.tsx](app/5b/page.tsx) | 5-Б: розклад + зіркове небо + капібара |
+| [app/5b/page.tsx](app/5b/page.tsx) | 5-Б: факт або англ. слово + розклад з іконками + зіркове небо + капібара |
 | [app/7g/page.tsx](app/7g/page.tsx) | 7-Г: лише розклад |
 | [app/data/fiveB.ts](app/data/fiveB.ts), [app/data/sevenG.ts](app/data/sevenG.ts) | розклади |
 | [app/data/times.ts](app/data/times.ts) | сітки часу, спільні для днів |
 | [app/lib/schedule.ts](app/lib/schedule.ts) | типи розкладу і робота з часом уроку |
+| [app/lib/subjectIcons.ts](app/lib/subjectIcons.ts) | емодзі до назви предмета (за коренем слова) |
 | [app/components/Timetable.tsx](app/components/Timetable.tsx) | таблиця, підсвітка уроку, дзвінок |
-| [app/components/Headline.tsx](app/components/Headline.tsx) | шапка, годинник, кнопка «сховати вихідні» |
-| [app/components/StarrySky.tsx](app/components/StarrySky.tsx) | канвас: зірки + метеори |
-| [app/components/Capybara.tsx](app/components/Capybara.tsx) | капібара, крокодил, гра |
+| [app/components/Headline.tsx](app/components/Headline.tsx) | шапка, годинник |
+| [app/components/FunFact.tsx](app/components/FunFact.tsx) | випадковий науковий факт або англійське слово з перекладом, кнопка «Ще» |
+| [app/components/StarrySky.tsx](app/components/StarrySky.tsx) | канвас: зірки, метеори, сонячна система в смузі шапки і рідкісні ракета/НЛО/супутник |
+| [app/components/Capybara.tsx](app/components/Capybara.tsx) | капібара, крокодил, гра (лише на десктопі з мишею) |
 
 ## Дані розкладу
 
@@ -36,7 +38,7 @@ npm run lint
 1. **`lessons[i]` показується з часом `times[i]`.** Якщо перший урок у дні порожній, потрібна заглушка `{ subject: "—", link: NONE }`, інакше всі уроки зсунуться на годину вгору. Порожні слоти в кінці дня можна просто не додавати.
 2. **`day` мусить точно збігатися з `Intl.DateTimeFormat("uk-UA", { weekday: "long" })`.** Порівняння нормалізує апостроф (`'ʼ\`‘` → `'`), тому «П'ятниця» працює, але будь-яка інша розбіжність зламає підсвітку поточного дня і дзвінок.
 
-Вихідний день — це `lessons: []`. Кнопка «сховати вихідні» приховує саме такі дні (стан у `localStorage`, ключ `hideWeekends`).
+Вихідний день — це `lessons: []`. Такі дні в таблиці не показуються зовсім.
 
 ### Кольори кнопок
 

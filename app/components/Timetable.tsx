@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import React, { useEffect, useState, useRef } from "react";
-import { useHideWeekends } from "../context/HideWeekendsContext";
 import { DaySchedule, LessonOption, NO_LINK, activeOptionIndex, isWithinLesson, lessonOptions, normalizeDay } from "../lib/schedule";
+import { subjectIcon } from "../lib/subjectIcons";
+import { isMobileDevice, openInZoomApp, zoomAppLink } from "../lib/zoom";
 
 const BELL_SOUND = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
 
@@ -17,36 +18,59 @@ const lessonTone = (option: LessonOption, isToday: boolean) => {
   return isToday ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-gray-700 border border-gray-100 hover:border-blue-400";
 };
 
-function LessonButton({ option, active, isToday, compact, muted }: { option: LessonOption; active: boolean; isToday: boolean; compact: boolean; muted?: boolean }) {
+function LessonButton({ option, active, isToday, compact, muted, withIcon }: { option: LessonOption; active: boolean; isToday: boolean; compact: boolean; muted?: boolean; withIcon?: boolean }) {
   // У рядку з кількох кнопок місця вдвічі менше, тому шрифт дрібніший
   const size = compact ? "text-xs p-1.5 flex-1 min-w-0" : "text-md p-2";
   const shared = `${size} font-black rounded-lg text-center transition-all shadow-sm`;
+  const icon = withIcon ? subjectIcon(option.subject) : "";
+  const label = (
+    <>
+      {icon && (
+        <span aria-hidden="true" className="mr-1 font-normal">
+          {icon}
+        </span>
+      )}
+      {option.subject}
+    </>
+  );
 
   if (option.link === NO_LINK) {
-    return <span className={`${shared} ${muted ? "opacity-40" : "opacity-70"} ${active ? "bg-yellow-400 text-yellow-900 scale-105" : lessonTone(option, isToday)}`}>{option.subject}</span>;
+    return <span className={`${shared} ${muted ? "opacity-40" : "opacity-70"} ${active ? "bg-yellow-400 text-yellow-900 scale-105" : lessonTone(option, isToday)}`}>{label}</span>;
   }
+
+  const appLink = zoomAppLink(option.link);
+
+  // Звичайний клік веде одразу в застосунок Zoom. Ctrl/середня кнопка й телефони
+  // працюють як раніше — через веб-посилання
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!appLink || isMobileDevice() || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    openInZoomApp(appLink, option.link);
+  };
 
   return (
     <Link
       target="_blank"
       href={option.link}
+      onClick={handleClick}
       className={`${shared} ${muted ? "opacity-40" : ""} ${active ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-500 scale-105" : lessonTone(option, isToday)}`}
     >
-      {option.subject}
+      {label}
     </Link>
   );
 }
 
 interface TimetableProps {
   scheduleData: DaySchedule[];
+  /** Іконки біля назв предметів — для молодших класів */
+  withIcons?: boolean;
 }
 
-export default function Timetable({ scheduleData }: TimetableProps) {
+export default function Timetable({ scheduleData, withIcons }: TimetableProps) {
   const [now, setNow] = useState(new Date());
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [lastPlayedTime, setLastPlayedTime] = useState("");
-  const { hideWeekends } = useHideWeekends();
   const [mounted, setMounted] = useState(false);
 
   // Audio створюємо один раз: якби елемент перестворювався, губився б дозвіл
@@ -178,7 +202,8 @@ export default function Timetable({ scheduleData }: TimetableProps) {
         {scheduleData?.map((dayData) => {
           const isToday = normalizeDay(dayData.day) === normalizeDay(todayName);
 
-          if (hideWeekends && (!dayData.lessons || dayData.lessons.length === 0)) {
+          // Вихідні (дні без уроків) не показуємо зовсім
+          if (dayData.lessons.length === 0) {
             return null;
           }
 
@@ -197,8 +222,7 @@ export default function Timetable({ scheduleData }: TimetableProps) {
               </div>
 
               <div className="p-2 space-y-2">
-                {dayData.lessons.length > 0 ? (
-                  dayData.lessons.map((lesson, idx) => {
+                {dayData.lessons.map((lesson, idx) => {
                     const active = isCurrentLesson(dayData.times[idx], isToday);
 
                     return (
@@ -232,6 +256,7 @@ export default function Timetable({ scheduleData }: TimetableProps) {
                                       isToday={isToday}
                                       compact={alternating}
                                       muted={alternating && !isThisWeek}
+                                      withIcon={withIcons}
                                     />
                                   );
                                 })}
@@ -243,10 +268,7 @@ export default function Timetable({ scheduleData }: TimetableProps) {
                         {active && <p className="text-[9px] text-center font-bold text-yellow-600 uppercase mt-1 animate-pulse">Зараз іде урок</p>}
                       </div>
                     );
-                  })
-                ) : (
-                  <div className="py-12 text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Вихідний</div>
-                )}
+                  })}
               </div>
             </div>
           );

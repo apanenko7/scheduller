@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useHideWeekends } from "../context/HideWeekendsContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation"; // Додаємо цей хук
 
 export default function Headline() {
   const [now, setNow] = useState<Date>(new Date());
   const [mounted, setMounted] = useState(false);
-  const { hideWeekends, setHideWeekends } = useHideWeekends();
 
   const pathname = usePathname(); // Отримуємо поточний шлях
   const isHomePage = pathname === "/"; // Перевіряємо, чи ми на головній
@@ -49,12 +47,6 @@ export default function Headline() {
             <p className="text-lg font-medium opacity-0">Завантаження...</p>
           )}
         </div>
-
-        {mounted && (
-          <button onClick={() => setHideWeekends(!hideWeekends)} className="mt-3 px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
-            {hideWeekends ? "Показати вихідні" : "Сховати вихідні"}
-          </button>
-        )}
       </div>
     </div>
   );
